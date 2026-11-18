@@ -162,5 +162,7 @@ def mavia_endpoint():
         return jsonify(res), 200
     except Exception as e: return jsonify(ok=False, error=str(e)), 500
 
-if __name__ == '__main__':
+app = app
+
+if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, threaded=True)
