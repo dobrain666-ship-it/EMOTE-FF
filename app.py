@@ -1,15 +1,16 @@
+import os, sys, threading, json, time, struct, base64, socket, requests, urllib3
 from flask import Flask, request, jsonify, render_template_string
-import os, sys, threading
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 
-sys.path.insert(0, '/storage/emulated/0/newve/')
-try:
-    from app import run_api_emote
-except ImportError:
-    print('[-] Original app.py not found in /storage/emulated/0/newve/')
-    def run_api_emote(tc, emote, uid): return {'error': 'Bot engine not found'}
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = Flask(__name__)
 api_lock = threading.Lock()
+
+REDIS_URL = os.getenv("REDIS_URL", "https://honest-cod-92290.upstash.io")
+REDIS_TOKEN = os.getenv("REDIS_TOKEN", "gQAAAAAAAWiCAAIgcDE3NjI3NDFmM2MyYzU0MzVlOWY3Yjc5YzRlYWVlNzRlZQ")
+REDIS_KEY = "ff_cache"
 
 HTML = '''
 <!DOCTYPE html>
@@ -88,7 +89,6 @@ function render(){
   const q = document.getElementById('search').value.toLowerCase().trim();
   const g = document.getElementById('grid'); g.innerHTML = '';
   
-  // 67 completely removed
   let list = EMOTES.filter(e => {
       if (e.id == "67") return false;
       return !q || e.name.toLowerCase().includes(q) || e.id.toString().includes(q);
@@ -108,7 +108,7 @@ function render(){
 
 function log(s, cls){ 
   const l = document.getElementById('log'); 
-  l.innerHTML = `<span class="${cls||''}">${s}</span>`; 
+  l.innerHTML = `<span class="${cls||''}">${s}</span>`;
 }
 
 function send(emote_id, name){
@@ -149,7 +149,7 @@ def index(): return render_template_string(HTML)
 
 @app.route('/emotes.js')
 def emotes_js():
-    return app.send_static_file('emotes.js') if os.path.exists('static/emotes.js') else open('/storage/emulated/0/ff_static/emotes.js').read(), 200, {'Content-Type': 'application/javascript'}
+    return open('/storage/emulated/0/ff_static/emotes.js').read(), 200, {'Content-Type': 'application/javascript'}
 
 @app.route('/mavia')
 def mavia_endpoint():
@@ -158,11 +158,12 @@ def mavia_endpoint():
     tu = (request.args.get('Target_Uid') or '').strip()
     if not tc.isdigit() or not em.isdigit(): return jsonify(ok=False, error='Invalid parameters'), 400
     try:
+        from app import run_api_emote
         with api_lock: res = run_api_emote(tc, int(em), int(tu) if tu else None)
         return jsonify(res), 200
     except Exception as e: return jsonify(ok=False, error=str(e)), 500
 
 app = app
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, threaded=True)
