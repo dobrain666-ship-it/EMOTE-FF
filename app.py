@@ -149,7 +149,7 @@ def index(): return render_template_string(HTML)
 
 @app.route('/emotes.js')
 def emotes_js():
-    return open('/storage/emulated/0/ff_static/emotes.js').read(), 200, {'Content-Type': 'application/javascript'}
+    return open('emotes.js').read(), 200, {'Content-Type': 'application/javascript'}
 
 @app.route('/mavia')
 def mavia_endpoint():
