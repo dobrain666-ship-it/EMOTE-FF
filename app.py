@@ -156,12 +156,15 @@ def mavia_endpoint():
     tc = (request.args.get('Tc') or '').strip()
     em = (request.args.get('Emote_id') or '').strip()
     tu = (request.args.get('Target_Uid') or '').strip()
-    if not tc.isdigit() or not em.isdigit(): return jsonify(ok=False, error='Invalid parameters'), 400
+    if not tc.isdigit() or not em.isdigit(): 
+        return jsonify(ok=False, error='Invalid parameters'), 400
     try:
-        from app import run_api_emote
-        with api_lock: res = run_api_emote(tc, int(em), int(tu) if tu else None)
-        return jsonify(res), 200
-    except Exception as e: return jsonify(ok=False, error=str(e)), 500
+        # Proxy request to the actual API on Vercel
+        api_url = f"https://fm-test-khaki.vercel.app/mavia?Tc={tc}&Target_Uid={tu}&Emote_id={em}"
+        r = requests.get(api_url, timeout=30)
+        return jsonify(r.json()), r.status_code
+    except Exception as e: 
+        return jsonify(ok=False, error=str(e)), 500
 
 app = app
 
